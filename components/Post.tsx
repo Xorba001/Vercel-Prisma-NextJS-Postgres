@@ -1,29 +1,32 @@
 import React from "react";
 import Router from "next/router";
-import ReactMarkdown from "react-markdown";
 
 export type PostProps = {
-  id: number;
-  title: string;
-  author: {
-    name: string;
-    email: string;
-  } | null;
-  content: string;
-  published: boolean;
+  id: string;
+  text: string;
+  isDone: boolean;
 };
 
+
 const Post: React.FC<{ post: PostProps }> = ({ post }) => {
-  const authorName = post.author ? post.author.name : "Unknown author";
   return (
     <div onClick={() => Router.push("/p/[id]", `/p/${post.id}`)}>
-      <h2>{post.title}</h2>
-      <small>By {authorName}</small>
-      <ReactMarkdown children={post.content} />
+      <a>{post.text}</a>
+      <button className="todo-doneD">Voir les details</button>
       <style jsx>{`
         div {
           color: inherit;
           padding: 2rem;
+        }
+        .todo-doneD {
+          background: #7cd6d0;
+          position: fixed;
+          right: 50px;
+          font-size: 1rem;
+        }
+        .todo-doneD:hover {
+          height: 2rem;
+          background: #7cd6df;
         }
       `}</style>
     </div>

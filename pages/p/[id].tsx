@@ -1,67 +1,71 @@
-import React from "react";
-import type { GetStaticProps } from "next";
-import ReactMarkdown from "react-markdown";
-import Layout from "../../components/Layout";
-import Router from "next/router";
-import { PostProps } from "../../components/Post";
-import prisma from '../../lib/prisma'
-import { useSession } from "next-auth/react";
+import React,{ useContext } from "react"
+import { GetServerSideProps } from "next"
+import Layout from "../../components/Layout"
+import { PostProps } from "../../components/Post"
+import prisma from '../../lib/prisma';
+import Router from 'next/router';
+import { FeedContext } from '../../context/FeedContext';
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const post = await prisma.post.findUnique({
+export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+  const post = await prisma.todoItem.findUnique({
     where: {
-      id: String(params?.id) ,
-    },
-    include: {
-      author: {
-        select: { name: true, email: true },
-      },
+      id: String(params?.id),
     },
   });
   return {
     props: post,
-    revalidate: 10,
   };
 };
 
-async function publishPost(id: number): Promise<void> {
-  await fetch(`/api/publish/${id}`, {
-    method: "PUT",
-  });
-  await Router.push("/")
-}
-
-async function deletePost(id: number): Promise<void> {
-  await fetch(`/api/post/${id}`, {
-    method: "DELETE",
-  });
-  await Router.push("/")
-}
-
 const Post: React.FC<PostProps> = (props) => {
-  const { data: session, status } = useSession();
-  if (status === 'loading') {
-    return <div>Authenticating ...</div>;
+  const context = useContext(FeedContext);
+if (!context) {
+  throw new Error('useContext must be used within a FeedContext.Provider');
+}
+  const { feed, setFeed } = context;
+  let text = props.text
+
+  async function deletePost(id) {
+    const response = await fetch(`/api/${id}`, {
+      method: 'DELETE',
+    });
+    if (response.ok) {
+      setTimeout(function(){
+      window.location.reload();
+   }, 500);
+      setFeed(feed.filter((post) => post.id !== id));
+      Router.push('/');
+    } else {
+      console.error('Error deleting post:', await response.text());
+    }
+    Router.push('/');
   }
-  const userHasValidSession = Boolean(session);
-  const postBelongsToUser = session?.user?.email === props.author?.email;
-  let title = props.title;
-  if (!props.published) {
-    title = `${title} (Draft)`;
+
+  async function markDone(id) {
+    const response = await fetch(`/api/done/${id}`, {
+      method: 'PUT',
+    });
+    if (response.ok) {
+      setTimeout(function(){
+      window.location.reload();
+   }, 500);
+      setFeed(feed.map((post) => post.id === id ? { ...post, isDone: true } : post));
+      Router.push('/');
+    } else {
+      console.error('Error marking post as done:', await response.text());
+    }
+    await Router.push('/');
   }
 
   return (
     <Layout>
       <div>
-        <h2>{title}</h2>
-        <p>By {props?.author?.name || "Unknown author"}</p>
-        <ReactMarkdown children={props.content} />
-        {!props.published && userHasValidSession && postBelongsToUser && (
-          <button onClick={() => publishPost(props.id)}>Publish</button>
-        )}
-        {userHasValidSession && postBelongsToUser && (
-          <button onClick={() => deletePost(props.id)}>Delete</button>
-        )}
+        <h2>{text}</h2>
+        <button className="todo-done" onClick={() => markDone(props.id)}>🗸 Accompli</button>
+        <button className="todo-delete" onClick={() => deletePost(props.id)}>X Effacer</button>
+        <button onClick={() => Router.push('/')}>
+          ⌂ Retour a la liste todo
+        </button>
       </div>
       <style jsx>{`
         .page {
@@ -74,7 +78,7 @@ const Post: React.FC<PostProps> = (props) => {
         }
 
         button {
-          background: #ececec;
+          background: #7cd6d0;
           border: 0;
           border-radius: 0.125rem;
           padding: 1rem 2rem;
@@ -85,7 +89,7 @@ const Post: React.FC<PostProps> = (props) => {
         }
       `}</style>
     </Layout>
-  );
-};
+  )
+}
 
-export default Post;
+export default Post

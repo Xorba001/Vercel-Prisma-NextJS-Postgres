@@ -1,61 +1,66 @@
-import React, { useState } from "react";
-import Layout from "../components/Layout";
-import Router from "next/router";
+// pages/create.tsx
+
+import React, { useState } from 'react';
+import Layout from '../components/Layout';
+import Router from 'next/router';
 
 const Draft: React.FC = () => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [text, setText] = useState('');
 
-  const submitData = async (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    try {
-      const body = { title, content };
-      await fetch(`/api/post`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      await Router.push("/drafts");
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    // /pages/create.tsx
 
-  return (
-    <Layout>
-      <div>
-        <form onSubmit={submitData}>
-          <h1>New Draft</h1>
-          <input
-            autoFocus
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
-            type="text"
-            value={title}
-          />
-          <textarea
-            cols={50}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Content"
-            rows={8}
-            value={content}
-          />
-          <input disabled={!content || !title} type="submit" value="Create" />
-          <a className="back" href="#" onClick={() => Router.push("/")}>
-            or Cancel
-          </a>
-        </form>
-      </div>
-      <style jsx>{`
+    const submitData = async (e: React.SyntheticEvent) => {
+        e.preventDefault();
+        try {
+            const body = { text };
+            const response =await fetch('/api/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (response.ok) {
+                setTimeout(function(){
+                window.location.reload();
+             }, 1200);
+            } else {
+                console.error('Error creating post:', await response.text());
+              }
+            await Router.push('/');
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    return (
+        <Layout>
+            <div>
+                <form onSubmit={submitData}>
+                    <h1>Nouveau todo</h1>
+                    <input
+                        autoFocus
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder="ecrire votre todo ici"
+                        type="text"
+                        value={text}
+                    />
+                    <input disabled={!text} type="submit" value="Ajouter" />
+                    <a className="back" href="#" onClick={() => Router.push('/')}>
+                        retour a la liste todo
+                    </a>
+                </form>
+            </div>
+            <style jsx>{`
         .page {
-          background: white;
+          background: var(--geist-background);
           padding: 3rem;
           display: flex;
           justify-content: center;
           align-items: center;
         }
 
-        input[type="text"],
+        input[type='text'],
         textarea {
           width: 100%;
           padding: 0.5rem;
@@ -64,7 +69,7 @@ const Draft: React.FC = () => {
           border: 0.125rem solid rgba(0, 0, 0, 0.2);
         }
 
-        input[type="submit"] {
+        input[type='submit'] {
           background: #ececec;
           border: 0;
           padding: 1rem 2rem;
@@ -74,8 +79,8 @@ const Draft: React.FC = () => {
           margin-left: 1rem;
         }
       `}</style>
-    </Layout>
-  );
+        </Layout>
+    );
 };
 
 export default Draft;
